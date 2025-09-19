@@ -4,7 +4,6 @@ import 'package:fix_my_city/screens/map_screen.dart'; // Placeholder
 import 'package:fix_my_city/screens/reports_screen.dart'; // Placeholder
 import 'package:fix_my_city/screens/community_screen.dart'; // Placeholder
 import 'package:fix_my_city/screens/profile_screen.dart'; // Placeholder
-import 'package:flutter_svg/flutter_svg.dart';
 
 void main() {
   runApp(const MyApp());
