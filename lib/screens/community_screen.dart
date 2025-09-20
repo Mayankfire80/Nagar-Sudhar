@@ -5,32 +5,75 @@ class CommunityScreen extends StatelessWidget {
 
   // Dummy data for the leaderboard
   final List<Map<String, dynamic>> _leaderboard = const [
-    {'name': 'Avni Gupta', 'points': 1250, 'rank': 1, 'image': 'assets/avni_gupta.png'},
-    {'name': 'Arjun Sharma', 'points': 1180, 'rank': 2, 'image': 'assets/arjun_sharma.png'},
-    {'name': 'Priya Singh', 'points': 950, 'rank': 3, 'image': 'assets/priya_singh.png'},
-    {'name': 'Rajesh Kumar', 'points': 810, 'rank': 4, 'image': 'assets/rajesh_kumar.png'},
-    {'name': 'Meera Patel', 'points': 720, 'rank': 5, 'image': 'assets/meera_patel.png'},
+    {
+      'name': 'Avni Gupta',
+      'points': 1250,
+      'rank': 1,
+      'image': 'assets/avni_gupta.png',
+    },
+    {
+      'name': 'Arjun Sharma',
+      'points': 1180,
+      'rank': 2,
+      'image': 'assets/arjun_sharma.png',
+    },
+    {
+      'name': 'Priya Singh',
+      'points': 950,
+      'rank': 3,
+      'image': 'assets/priya_singh.png',
+    },
+    {
+      'name': 'Rajesh Kumar',
+      'points': 810,
+      'rank': 4,
+      'image': 'assets/rajesh_kumar.png',
+    },
+    {
+      'name': 'Meera Patel',
+      'points': 720,
+      'rank': 5,
+      'image': 'assets/meera_patel.png',
+    },
   ];
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100],
-      appBar: AppBar(
-        title: const Text('Community', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.grey[100],
-        elevation: 0,
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color.fromARGB(255, 202, 233, 217),
+            Color.fromARGB(255, 171, 233, 230),
+            Colors.white,
+          ],
+          stops: [0.0, 0.70, 1.0], // This is the key part for the new design
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildLeaderboardSection(),
-              const SizedBox(height: 20),
-              _buildMunicipalTrustSection(),
-            ],
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text(
+            'Community',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+        ),
+        body: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildLeaderboardSection(),
+                const SizedBox(height: 20),
+                _buildMunicipalTrustSection(),
+                const SizedBox(height: 120),
+              ],
+            ),
           ),
         ),
       ),
@@ -62,7 +105,8 @@ class CommunityScreen extends StatelessWidget {
           const SizedBox(height: 10),
           ListView.builder(
             shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(), // To avoid nested scrolling
+            physics:
+                const NeverScrollableScrollPhysics(), // To avoid nested scrolling
             itemCount: _leaderboard.length,
             itemBuilder: (context, index) {
               final user = _leaderboard[index];
@@ -79,20 +123,26 @@ class CommunityScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildLeaderboardItem(int rank, String name, int points, String imageUrl) {
+  Widget _buildLeaderboardItem(
+    int rank,
+    String name,
+    int points,
+    String imageUrl,
+  ) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           Text(
             '#$rank',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey[700]),
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey[700],
+            ),
           ),
           const SizedBox(width: 15),
-          CircleAvatar(
-            backgroundImage: AssetImage(imageUrl),
-            radius: 20,
-          ),
+          CircleAvatar(backgroundImage: AssetImage(imageUrl), radius: 20),
           const SizedBox(width: 15),
           Expanded(
             child: Text(
@@ -102,7 +152,11 @@ class CommunityScreen extends StatelessWidget {
           ),
           Text(
             '$points pts',
-            style: const TextStyle(fontSize: 16, color: Colors.redAccent, fontWeight: FontWeight.bold),
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.redAccent,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),
@@ -146,13 +200,21 @@ class CommunityScreen extends StatelessWidget {
           const SizedBox(height: 5),
           const Text(
             '85% Trusted',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: Colors.blueAccent,
+            ),
           ),
           const SizedBox(height: 10),
           // This section would show user voting on resolved issues
           const Text(
             'Vote on resolved issues to give feedback on their work quality.',
-            style: TextStyle(fontSize: 14, fontStyle: FontStyle.italic, color: Colors.grey),
+            style: TextStyle(
+              fontSize: 14,
+              fontStyle: FontStyle.italic,
+              color: Colors.grey,
+            ),
           ),
         ],
       ),

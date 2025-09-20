@@ -1,26 +1,56 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:fix_my_city/screens/notifications_screen.dart';
 import 'package:fix_my_city/screens/settings_screen.dart';
 import 'package:fix_my_city/screens/new_report_screen.dart';
+import 'package:fix_my_city/models/issue_data_model.dart';
+import 'dart:io';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final List<IssueData> reports;
+  final VoidCallback onViewAllTapped;
+  final Function(IssueData) addReport;
+  final Function(int) onUpvote;
+  final Function(int) onDownvote;
+
+  const HomeScreen({
+    super.key,
+    required this.reports,
+    required this.onViewAllTapped,
+    required this.addReport,
+    required this.onUpvote,
+    required this.onDownvote,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.grey[100], // Light grey background
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildAppBar(context),
-              _buildLocationSearchBar(),
-              _buildYourImpactCard(context), // <--- Corrected this line
-              _buildLatestReportsNearYou(),
-            ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color.fromARGB(255, 202, 233, 217),
+            Color.fromARGB(255, 171, 233, 230),
+            Colors.white,
+          ],
+          stops: [0.0, 0.70, 1.0],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildAppBar(context),
+                _buildLocationSearchBar(),
+                _buildYourImpactCard(context),
+                _buildLatestReportsNearYou(),
+                const SizedBox(height: 120),
+              ],
+            ),
           ),
         ),
       ),
@@ -35,22 +65,18 @@ class HomeScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              // Avatar
               Container(
                 width: 40,
                 height: 40,
                 decoration: const BoxDecoration(
                   shape: BoxShape.circle,
                   image: DecorationImage(
-                    image: AssetImage(
-                      'assets/avatar.png',
-                    ), // Add your avatar image here
+                    image: AssetImage('assets/avatar.png'),
                     fit: BoxFit.cover,
                   ),
                 ),
               ),
               const SizedBox(width: 10),
-              // App Title
               const Text(
                 'नगर सुधार',
                 style: TextStyle(
@@ -61,9 +87,22 @@ class HomeScreen extends StatelessWidget {
               ),
             ],
           ),
-          // Notification and Settings Icons
           Row(
             children: [
+              IconButton(
+                icon: SvgPicture.asset(
+                  'assets/icons/language-translate.svg', // Path to your SVG file
+                  colorFilter: const ColorFilter.mode(
+                    Colors.black87,
+                    BlendMode.srcIn,
+                  ),
+                  height: 24,
+                  width: 24,
+                ),
+                onPressed: () {
+                  // Add your language-translate logic here
+                },
+              ),
               IconButton(
                 icon: const Icon(
                   Icons.notifications_none,
@@ -100,58 +139,75 @@ class HomeScreen extends StatelessWidget {
   Widget _buildLocationSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Current Location Dropdown
-          InkWell(
-            onTap: () {
-              // Handle location change
-            },
-            child: Row(
-              children: [
-                Text(
-                  'Katras More, Dhanbad',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
-                Icon(Icons.arrow_drop_down, color: Colors.grey[700]),
-              ],
+      child: Container(
+        padding: const EdgeInsets.all(16.0),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20.0),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.1),
+              spreadRadius: 2,
+              blurRadius: 8,
+              offset: const Offset(0, 3),
             ),
-          ),
-          const SizedBox(height: 15),
-          // Search Bar
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.withOpacity(0.1),
-                  spreadRadius: 2,
-                  blurRadius: 8,
-                  offset: const Offset(0, 3),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.search, color: Colors.grey[600]),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search "issue types"',
-                      border: InputBorder.none,
-                      hintStyle: TextStyle(color: Colors.grey[600]),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: () {
+                // Handle location change
+              },
+              child: Row(
+                children: [
+                  Text(
+                    'Katras More, Dhanbad',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.green[300],
                     ),
                   ),
-                ),
-                Icon(Icons.mic_none, color: Colors.grey[600]),
-              ],
+                  Icon(Icons.arrow_drop_down, color: Colors.grey[500]),
+                ],
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 15),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 5),
+              decoration: BoxDecoration(
+                color: Colors.black87,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    spreadRadius: 2,
+                    blurRadius: 8,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.search, color: Colors.grey[400]),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: TextField(
+                      decoration: InputDecoration(
+                        hintText: 'Search "issue types"',
+                        border: InputBorder.none,
+                        hintStyle: TextStyle(color: Colors.grey),
+                      ),
+                    ),
+                  ),
+                  Icon(Icons.mic_none, color: Colors.grey[400]),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -200,7 +256,7 @@ class HomeScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
-                          color: Colors.green, // Matching your green color
+                          color: Colors.green,
                         ),
                       ),
                       const SizedBox(height: 5),
@@ -224,18 +280,18 @@ class HomeScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                // Report New Problem Button
                 GestureDetector(
                   onTap: () {
-                    // Navigate to New Report screen
-                    Navigator.of(context).push(MaterialPageRoute(builder: (context) => const NewReportScreen()));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            NewReportScreen(onReportSubmitted: addReport),
+                      ),
+                    );
                   },
                   child: Container(
-                    width:
-                        MediaQuery.of(context).size.width * 0.35, // Adjust size
-                    height:
-                        MediaQuery.of(context).size.width *
-                        0.35, // Adjust size to make it square
+                    width: MediaQuery.of(context).size.width * 0.35,
+                    height: MediaQuery.of(context).size.width * 0.35,
                     decoration: BoxDecoration(
                       color: Colors.redAccent,
                       borderRadius: BorderRadius.circular(15),
@@ -282,9 +338,7 @@ class HomeScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               TextButton(
-                onPressed: () {
-                  // Navigate to all reports screen
-                },
+                onPressed: onViewAllTapped,
                 child: const Text(
                   'View All',
                   style: TextStyle(
@@ -296,68 +350,48 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 10),
-          // List of report items
-          _buildReportItem(
-            'Large Pothole on Main Str.',
-            '12 hours ago',
-            'in progress ...',
-            Colors.orange, // In progress color
-            'assets/pothole1.png', // Add your image
-          ),
-          _buildReportItem(
-            'Sewer Leakage',
-            '12 hours ago',
-            'pending !',
-            Colors.red, // Pending color
-            'assets/sewer_leakage.png', // Add your image
-          ),
-          _buildReportItem(
-            'Streetlight Not Working',
-            '12 hours ago',
-            'resolved.',
-            Colors.green, // Resolved color
-            'assets/streetlight.png', // Add your image
-          ),
+          ...reports.map((report) => _buildReportItem(report)).toList(),
         ],
       ),
     );
   }
 
-  Widget _buildReportItem(
-    String title,
-    String time,
-    String status,
-    Color statusColor,
-    String imageUrl,
-  ) {
+  Widget _buildReportItem(IssueData report) {
+    Color statusColor;
+    if (report.currentStatus == 'pending') {
+      statusColor = Colors.red;
+    } else if (report.currentStatus == 'in progress') {
+      statusColor = Colors.orange;
+    } else {
+      statusColor = Colors.green;
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
-      elevation: 0, // No shadow for individual items to match image
+      elevation: 0,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
         child: Row(
           children: [
-            // Report Image
             Container(
               width: 70,
               height: 70,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(10),
                 image: DecorationImage(
-                  image: AssetImage(imageUrl), // Make sure these assets exist
+                  image: AssetImage(report.imageUrl),
                   fit: BoxFit.cover,
                 ),
               ),
             ),
             const SizedBox(width: 15),
-            // Report Details
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    title,
+                    report.title,
                     style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w600,
@@ -366,13 +400,31 @@ class HomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 5),
                   Text(
-                    time,
+                    report.reportedOn,
                     style: TextStyle(fontSize: 13, color: Colors.grey[600]),
+                  ),
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: statusColor.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    child: Text(
+                      report.currentStatus.toUpperCase(),
+                      style: TextStyle(
+                        color: statusColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
-            // Upvote/Downvote and Status
             Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -381,13 +433,13 @@ class HomeScreen extends StatelessWidget {
                     Icon(
                       Icons.thumb_up_alt_outlined,
                       size: 20,
-                      color: Colors.grey[600],
+                      color: Colors.green,
                     ),
                     const SizedBox(width: 8),
                     Icon(
                       Icons.thumb_down_alt_outlined,
                       size: 20,
-                      color: Colors.grey[600],
+                      color: Colors.red,
                     ),
                   ],
                 ),
@@ -402,7 +454,7 @@ class HomeScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(5),
                   ),
                   child: Text(
-                    status,
+                    report.currentStatus,
                     style: TextStyle(
                       color: statusColor,
                       fontSize: 12,

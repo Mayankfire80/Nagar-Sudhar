@@ -6,9 +6,11 @@ class IssueData {
   final String title;
   final String description;
   final String imageUrl;
-  final LatLng location; // This will hold the latitude and longitude for the map
+  final LatLng location;
   final String reportedOn;
-  final String currentStatus;
+  String currentStatus; // Made mutable
+  int upvotes; // Added
+  int downvotes; // Added
 
   IssueData({
     required this.id,
@@ -18,5 +20,7 @@ class IssueData {
     required this.location,
     required this.reportedOn,
     required this.currentStatus,
+    this.upvotes = 0,
+    this.downvotes = 0,
   });
 }
