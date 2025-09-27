@@ -1,19 +1,25 @@
+// lib/screens/new_report_screen.dart (FINAL CODE)
+
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:fix_my_city/models/issue_data_model.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:fix_my_city/providers/reports_provider.dart';
+import 'package:fix_my_city/services/location_service.dart'; 
 
-class NewReportScreen extends StatefulWidget {
-  final Function(IssueData) onReportSubmitted;
+// Providers for the Location Service (Riverpod Best Practice)
+final locationServiceProvider = Provider((ref) => LocationService());
 
-  const NewReportScreen({super.key, required this.onReportSubmitted});
+class NewReportScreen extends ConsumerStatefulWidget {
+  const NewReportScreen({super.key}); 
 
   @override
-  _NewReportScreenState createState() => _NewReportScreenState();
+  ConsumerState<NewReportScreen> createState() => _NewReportScreenState(); 
 }
 
-class _NewReportScreenState extends State<NewReportScreen> {
+class _NewReportScreenState extends ConsumerState<NewReportScreen> { 
   final _formKey = GlobalKey<FormState>();
   final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -22,18 +28,12 @@ class _NewReportScreenState extends State<NewReportScreen> {
   XFile? _imageFile;
   String? _selectedIssueType;
   String? _selectedSeverity;
+  LatLng? _currentLatLng; 
 
   final List<String> _issueTypes = [
-    'Pothole',
-    'Litter/Garbage',
-    'Damaged Sign',
-    'Broken Streetlight',
-    'Illegal Dumping',
-    'Graffiti',
-    'Water Leak',
-    'Other',
+    'Pothole', 'Litter/Garbage', 'Damaged Sign', 'Broken Streetlight', 
+    'Illegal Dumping', 'Graffiti', 'Water Leak', 'Other',
   ];
-
   final List<String> _severityLevels = ['Low', 'Medium', 'High', 'Urgent'];
 
   @override
@@ -44,67 +44,101 @@ class _NewReportScreenState extends State<NewReportScreen> {
     super.dispose();
   }
 
-  Future<void> _pickImage(ImageSource source) async {
+  Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
-    final XFile? image = await picker.pickImage(source: source);
+    final XFile? image = await picker.pickImage(source: ImageSource.camera, imageQuality: 70); 
     if (image != null) {
       setState(() {
         _imageFile = image;
       });
     }
   }
+  
+  // 🚫 REMOVED: _showImageSourceDialog is no longer needed
 
-  void _showImageSourceDialog() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: <Widget>[
-              ListTile(
-                leading: const Icon(Icons.camera_alt),
-                title: const Text('Camera'),
-                onTap: () {
-                  _pickImage(ImageSource.camera);
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _getCurrentLocation() {
+  Future<void> _getCurrentLocation() async {
+    final locationService = ref.read(locationServiceProvider);
+    
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Fetching current location... (Dummy)')),
+      const SnackBar(content: Text('Fetching current location...')),
     );
-    _locationController.text = "Current Location (Dummy)";
+
+    try {
+      final locationData = await locationService.getCurrentLocation();
+      
+      setState(() {
+        _currentLatLng = locationData['latLng'] as LatLng;
+        _locationController.text = locationData['address'] as String;
+      });
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location found!')),
+      );
+
+    } catch (e) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: ${e.toString()}')),
+      );
+    }
   }
 
-  void _submitReport() {
-    if (_formKey.currentState!.validate()) {
-      final newReport = IssueData(
-        id: DateTime.now().toString(),
-        title: _titleController.text,
-        description: _descriptionController.text,
-        imageUrl: _imageFile != null ? _imageFile!.path : 'assets/default.png',
-        location: const LatLng(23.7788, 86.4382),
-        reportedOn: 'Just now',
-        currentStatus: 'Pending',
+  void _submitReport() async {
+    // 1. Validate mandatory fields (location text field ensures text is present)
+    if (!_formKey.currentState!.validate() || 
+        _selectedSeverity == null || 
+        _imageFile == null) 
+    {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please ensure all details, including location, severity, and photo, are provided.')),
       );
-      widget.onReportSubmitted(newReport);
+      return;
+    }
+
+    // 🔥 FIX 2: If LatLng is null, but the location text field has data, assign a mock LatLng.
+    if (_currentLatLng == null && _locationController.text.isNotEmpty) {
+      _currentLatLng = const LatLng(23.7788, 86.4382); // Default Dhanbad coordinate for mock data
+    }
+    
+    // Final check for LatLng object (it must be set now)
+    if (_currentLatLng == null) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: Cannot determine map coordinates for submission.')),
+      );
+      return;
+    }
+    
+    final reportsNotifier = ref.read(reportsProvider.notifier);
+    
+    final newReport = IssueData(
+      id: 'temp_${DateTime.now().millisecondsSinceEpoch}', 
+      title: _titleController.text,
+      description: _descriptionController.text,
+      imageUrl: _imageFile!.path, 
+      location: _currentLatLng!, // Use the now guaranteed LatLng
+      reportedOn: 'Sending...',
+      currentStatus: 'pending',
+      category: _selectedIssueType!,
+      severity: _selectedSeverity!,
+    );
+
+    final snackBar = ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Submitting report...')),
+    );
+
+    try {
+      await reportsNotifier.addReport(newReport); 
+    
+      snackBar.close();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Report submitted successfully!')),
       );
       Future.delayed(const Duration(seconds: 1), () {
         Navigator.of(context).pop();
       });
-    } else {
+    } catch (e) {
+      snackBar.close();
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill out all required fields.')),
+        SnackBar(content: Text('Submission failed: ${e.toString()}')),
       );
     }
   }
@@ -170,7 +204,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                     return null;
                   },
                   items: _issueTypes.map<DropdownMenuItem<String>>((String value) {
-                    return DropdownMenuItem<String>(
+                    return DropdownMenuItem<String>( // FIX APPLIED HERE!
                       value: value,
                       child: Text(value),
                     );
@@ -263,6 +297,12 @@ class _NewReportScreenState extends State<NewReportScreen> {
                     );
                   }).toList(),
                 ),
+                if (_selectedSeverity == null && _formKey.currentState?.validate() == false)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text('Please select a severity level.', style: TextStyle(color: Colors.red, fontSize: 12)),
+                  ),
+
                 const SizedBox(height: 25),
                 const Text(
                   'Upload Photo',
@@ -270,7 +310,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                 ),
                 const SizedBox(height: 10),
                 GestureDetector(
-                  onTap: _showImageSourceDialog,
+                  onTap: _pickImage, // Call _pickImage directly, no dialog
                   child: Container(
                     height: 150,
                     decoration: BoxDecoration(
@@ -295,7 +335,7 @@ class _NewReportScreenState extends State<NewReportScreen> {
                                 ),
                                 SizedBox(height: 8),
                                 Text(
-                                  'Tap to add photo',
+                                  'Tap to take photo', 
                                   style: TextStyle(
                                     color: Colors.grey,
                                     fontSize: 16,
@@ -307,6 +347,12 @@ class _NewReportScreenState extends State<NewReportScreen> {
                         : null,
                   ),
                 ),
+                if (_imageFile == null && _formKey.currentState?.validate() == false)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 8.0),
+                    child: Text('A photo is required for the report.', style: TextStyle(color: Colors.red, fontSize: 12)),
+                  ),
+
                 const SizedBox(height: 80),
               ],
             ),

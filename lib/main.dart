@@ -1,5 +1,8 @@
-// main.dart
+// lib/main.dart
 import 'package:flutter/material.dart';
+// 🔥 RIVERPOD: Import Riverpod packages
+import 'package:flutter_riverpod/flutter_riverpod.dart'; 
+import 'package:fix_my_city/providers/reports_provider.dart';
 import 'package:fix_my_city/screens/home_screen.dart';
 import 'package:fix_my_city/screens/map_screen.dart';
 import 'package:fix_my_city/screens/reports_screen.dart';
@@ -10,13 +13,16 @@ import 'package:fix_my_city/models/issue_data_model.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:fix_my_city/screens/new_report_screen.dart';
 
-
 void main() {
-  runApp(const MyApp());
+  // 🔥 RIVERPOD: Wrap the app in ProviderScope
+  runApp(const ProviderScope(child: MyApp())); 
 }
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
+
+  // 🔥 NEW: Define the maximum width for the mobile view on desktop
+  static const double _maxWidth = 450.0;
 
   @override
   Widget build(BuildContext context) {
@@ -38,99 +44,84 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const MainAppWrapper(),
+      // 🔥 FIX: Center and constrain the app view for web/desktop
+      home: const Center(
+        child: SizedBox(
+          width: _maxWidth,
+          child: MainAppWrapper(),
+        ),
+      ),
     );
   }
 }
 
-class MainAppWrapper extends StatefulWidget {
+// 🔥 RIVERPOD: Change to ConsumerStatefulWidget
+class MainAppWrapper extends ConsumerStatefulWidget {
   const MainAppWrapper({super.key});
 
   @override
-  State<MainAppWrapper> createState() => _MainAppWrapperState();
+  ConsumerState<MainAppWrapper> createState() => _MainAppWrapperState();
 }
 
-class _MainAppWrapperState extends State<MainAppWrapper> {
-  int _selectedIndex = 0;
+// 🔥 RIVERPOD: Change to ConsumerState
+class _MainAppWrapperState extends ConsumerState<MainAppWrapper> {
+  // 🚫 REMOVED: int _selectedIndex = 0;
 
-  final List<IssueData> _reports = [
-    IssueData(
-      id: '1',
-      title: 'Large Pothole on Main Str.',
-      description: 'Huge pothole causing traffic jam and damage to bikes.',
-      imageUrl: 'assets/pothole1.png',
-      location: const LatLng(23.7788, 86.4382),
-      reportedOn: '12 hours ago',
-      currentStatus: 'in progress',
-      upvotes: 5,
-      downvotes: 1,
-    ),
-    IssueData(
-      id: '2',
-      title: 'Sewer Leakage',
-      description: 'Major leakage near the bus stop causing a bad smell.',
-      imageUrl: 'assets/sewer_leakage.png',
-      location: const LatLng(23.7795, 86.4395),
-      reportedOn: '12 hours ago',
-      currentStatus: 'pending',
-      upvotes: 2,
-      downvotes: 0,
-    ),
-    IssueData(
-      id: '3',
-      title: 'Streetlight Not Working',
-      description: 'Streetlight out, making the area unsafe at night.',
-      imageUrl: 'assets/streetlight.png',
-      location: const LatLng(23.7770, 86.4410),
-      reportedOn: '12 hours ago',
-      currentStatus: 'resolved',
-      upvotes: 10,
-      downvotes: 0,
-    ),
-  ];
-
-  void _addReport(IssueData newReport) {
-    setState(() {
-      _reports.insert(0, newReport);
-    });
-  }
-
-  void _onUpvote(int index) {
-    setState(() {
-      _reports[index].upvotes++;
-    });
-  }
-
-  void _onDownvote(int index) {
-    setState(() {
-      _reports[index].downvotes++;
+  // 🔥 NEW: Load reports when the widget is initialized
+  @override
+  void initState() {
+    super.initState();
+    // Start loading the initial data from the mock repository
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(reportsProvider.notifier).loadReports();
     });
   }
 
   void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    // 🔥 NEW: Update the provider state
+    ref.read(navigationIndexProvider.notifier).state = index;
   }
 
   @override
   Widget build(BuildContext context) {
+    // 🔥 NEW: Watch the provider for the selected index
+    final int selectedIndex = ref.watch(navigationIndexProvider); 
+    
+    // 🔥 RIVERPOD: Watch the reports list from the provider
+    final List<IssueData> reports = ref.watch(reportsProvider); 
+
+    // 🔥 NEW: Show loading spinner if reports are empty (while fetching)
+    if (reports.isEmpty) {
+      // Check if we are still waiting for initial data load
+      if (ref.watch(reportsProvider.notifier).state.isEmpty) {
+         return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Colors.redAccent),
+                SizedBox(height: 16),
+                Text("Loading civic data..."),
+              ],
+            ),
+          ),
+        );
+      }
+    }
+
     return Scaffold(
       body: Stack(
         children: [
           IndexedStack(
-            index: _selectedIndex,
+            index: selectedIndex, // 🔥 Use provider value
             children: [
               HomeScreen(
-                reports: _reports,
+                reports: reports,
                 onViewAllTapped: () => _onItemTapped(2),
-                addReport: _addReport,
-                onUpvote: _onUpvote,
-                onDownvote: _onDownvote,
               ),
-              MapScreen(reports: _reports),
-              ReportsScreen(reports: _reports, onUpvote: _onUpvote, onDownvote: _onDownvote),
-              const CommunityScreen(),
+              MapScreen(), // FIX: Removed 'reports: reports' parameter
+              ReportsScreen(reports: reports),
+              CommunityScreen(),
               const ProfileScreen(),
             ],
           ),
@@ -200,7 +191,8 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
     String iconPath,
     int index,
   ) {
-    final isSelected = _selectedIndex == index;
+    // 🔥 NEW: Use provider value for comparison
+    final isSelected = ref.watch(navigationIndexProvider) == index; 
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
 
     Color itemColor = isSelected
@@ -213,9 +205,8 @@ class _MainAppWrapperState extends State<MainAppWrapper> {
 
     return GestureDetector(
       onTap: () {
-        setState(() {
-          _selectedIndex = index;
-        });
+        // 🔥 NEW: Call _onItemTapped (which updates the provider)
+        _onItemTapped(index);
       },
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0),

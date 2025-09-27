@@ -1,41 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:fix_my_city/data/community_data.dart'; // Your external data file
 
 class CommunityScreen extends StatelessWidget {
-  const CommunityScreen({super.key});
+  // FIX: Removed 'const' keyword from the constructor. 
+  // This allows the widget to initialize with external runtime data.
+  CommunityScreen({super.key}); 
 
-  // Dummy data for the leaderboard
-  final List<Map<String, dynamic>> _leaderboard = const [
-    {
-      'name': 'Avni Gupta',
-      'points': 1250,
-      'rank': 1,
-      'image': 'assets/avni_gupta.png',
-    },
-    {
-      'name': 'Arjun Sharma',
-      'points': 1180,
-      'rank': 2,
-      'image': 'assets/arjun_sharma.png',
-    },
-    {
-      'name': 'Priya Singh',
-      'points': 950,
-      'rank': 3,
-      'image': 'assets/priya_singh.png',
-    },
-    {
-      'name': 'Rajesh Kumar',
-      'points': 810,
-      'rank': 4,
-      'image': 'assets/rajesh_kumar.png',
-    },
-    {
-      'name': 'Meera Patel',
-      'points': 720,
-      'rank': 5,
-      'image': 'assets/meera_patel.png',
-    },
-  ];
+  // The list now successfully loads from the external file
+  final List<LeaderboardEntry> _leaderboard = initialLeaderboardData;
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +19,7 @@ class CommunityScreen extends StatelessWidget {
             Color.fromARGB(255, 171, 233, 230),
             Colors.white,
           ],
-          stops: [0.0, 0.70, 1.0], // This is the key part for the new design
+          stops: [0.0, 0.70, 1.0], 
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -111,10 +83,10 @@ class CommunityScreen extends StatelessWidget {
             itemBuilder: (context, index) {
               final user = _leaderboard[index];
               return _buildLeaderboardItem(
-                user['rank'],
-                user['name'],
-                user['points'],
-                user['image'],
+                user.rank,
+                user.name,
+                user.points,
+                user.imageUrl,
               );
             },
           ),
